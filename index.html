@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Checkers Game</title>
+    <style>
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            border: 2px solid black;
+        }
+
+        .square {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .square.light {
+            background-color: yellow; 
+        }
+
+        .square.dark {
+            background-color: black; 
+            color: white;
+        }
+
+        .piece {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: red; 
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .piece.blue {
+            background-color: blue; 
+            color: white; 
+        }
+
+        .piece.king {
+            background-color: gold; 
+        }
+
+        .player-info {
+            margin-top: 20px;
+        }
+
+        .player-turn {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .game-status {
+            margin-top: 10px;
+            color: green; /* Initial status */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="board"></div>
+        <div class="player-info">
+            <div class="player-turn">Player's Turn</div>
+            <div class="game-status"></div>
+        </div>
+    </div>
+
+    <script>
+        const board = document.querySelector('.board');
+        const playerTurn = document.querySelector('.player-turn');
+        const gameStatus = document.querySelector('.game-status');
+
+        // Board setup (8x8 grid)
+        const boardArray = [
+            ['R', ' ', 'R', ' ', 'R', ' ', 'R', ' '],
+            [' ', 'R', ' ', 'R', ' ', 'R', ' ', 'R'],
+            ['R', ' ', 'R', ' ', 'R', ' ', 'R', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+            ['B', ' ', 'B', ' ', 'B', ' ', 'B', ' '],
+            [' ', 'B', ' ', 'B', ' ', 'B', ' ', 'B'],
+            ['B', ' ', 'B', ' ', 'B', ' ', 'B', ' ']
+        ];
+
+        // Player turn
+        let currentPlayer = 'R'; // Red starts
+
+        // Game status
+        let gameOver = false;
+
+        // Function to create and display the board
+        function createBoard() {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark'); // Alternating colors
+                    square.dataset.row = row; // Store row and col for reference
+                    square.dataset.col = col;
+
+                    // Add piece to square
+                    if (boardArray[row][col] !== ' ') {
+                        const piece = document.createElement('div');
+                        piece.classList.add('piece');
+                        piece.classList.add(boardArray[row][col]); // 'R' or 'B'
+                        square.appendChild(piece);
+                    }
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        // Handle square clicks
+        board.addEventListener('click', (event) => {
+            if (gameOver) return;
+
+            const clickedSquare = event.target;
+            const row = parseInt(clickedSquare.dataset.row);
+            const col = parseInt(clickedSquare.dataset.col);
+
+            if (currentPlayer === 'R') {
+                // Red's turn
+                if (selectedPiece) {
+                    // Piece is selected, check if move is valid
+                    const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col);
+                    const moveIsValid = validMoves.some(move => move.endRow === row && move.endCol === col);
+
+                    if (moveIsValid) {
+                        makeMove(selectedPiece.row, selectedPiece.col, row, col);
+                        selectedPiece = null;
+                        switchPlayer();
+                    } else {
+                        selectedPiece = null; // Reset selection if invalid
+                    }
+                } else {
+                    // Select a piece
+                    if (boardArray[row][col] === 'R' || boardArray[row][col] === 'RK') {
+                        selectedPiece = { row: row, col: col };
+                    }
+                }
+            } else {
+                // Blue's turn (handled by the AI)
+            }
+        });
+
+        // Update board display based on boardArray
+        function updateBoard() {
+            // Clear the board
+            board.innerHTML = '';
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.classList.add('square');
+                    square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+
+                    if (boardArray[row][col] !== ' ') {
+                        const piece = document.createElement('div');
+                        piece.classList.add('piece');
+                        piece.classList.add(boardArray[row][col]);
+
+                        // King promotion
+                        if (boardArray[row][col] === 'R' && row === 7 || boardArray[row][col] === 'B' && row === 0) {
+                            piece.classList.add('king');
+                        }
+
+                        square.appendChild(piece);
+                    }
+                    board.appendChild(square);
+                }
+            }
+        }
+
+        // Switch player turn
+        function switchPlayer() {
+            currentPlayer = currentPlayer === 'R' ? 'B' : 'R';
+            playerTurn.textContent = `${currentPlayer === 'R' ? 'Red' : 'Blue'}'s Turn`;
+        }
+
+        // Simple AI (random move)
+        function aiMove() {
+            let validMoves = [];
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (boardArray[row][col] === 'B' || boardArray[row][col] === 'BK') {
+                        const possibleMoves = getValidMoves(row, col);
+                        validMoves = validMoves.concat(possibleMoves);
+                    }
+                }
+            }
+
+            // Prioritize capture moves
+            const captureMoves = validMoves.filter(move => isCaptureMove(move.startRow, move.startCol, move.endRow, move.endCol));
+            if (captureMoves.length > 0) {
+                validMoves = captureMoves;
+            }
+
+            if (validMoves.length > 0) {
+                const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+                makeMove(randomMove.startRow, randomMove.startCol, randomMove.endRow, randomMove.endCol);
+            } else {
+                gameOver = true;
+                gameStatus.textContent = 'Game Over: Red Wins!';
+            }
+        }
+
+        // Function to get valid moves for a piece
+        function getValidMoves(row, col) {
+            const piece = boardArray[row][col];
+            const validMoves = [];
+            const direction = piece === 'B' || piece === 'BK' ? 1 : -1; // 1 for Blue (downward), -1 for Red (upward)
+
+            // Single piece moves
+            if (piece === 'B') {
+                // Diagonal forward left
+                if (isValidSquare(row + direction, col - 1) && boardArray[row + direction][col - 1] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col - 1 });
+                }
+                // Diagonal forward right
+                if (isValidSquare(row + direction, col + 1) && boardArray[row + direction][col + 1] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col + 1 });
+                }
+            } else {
+                // King moves (both forward and backward)
+                // Diagonal forward left
+                if (isValidSquare(row + direction, col - 1) && boardArray[row + direction][col - 1] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col - 1 });
+                }
+                // Diagonal forward right
+                if (isValidSquare(row + direction, col + 1) && boardArray[row + direction][col + 1] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col + 1 });
+                }
+                // Diagonal backward left
+                if (isValidSquare(row - direction, col - 1) && boardArray[row - direction][col - 1] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row - direction, endCol: col - 1 });
+                }
+                // Diagonal backward right
+                if (isValidSquare(row - direction, col + 1) && boardArray[row - direction][col + 1] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row - direction, endCol: col + 1 });
+                }
+            }
+
+            // Capture moves
+            // Diagonal forward left capture
+            if (isValidSquare(row + direction, col - 1) && boardArray[row + direction][col - 1] !== ' ' &&
+                boardArray[row + direction][col - 1] !== piece && isValidSquare(row + 2 * direction, col - 2) &&
+                boardArray[row + 2 * direction][col - 2] === ' ') {
+                validMoves.push({ startRow: row, startCol: col, endRow: row + 2 * direction, endCol: col - 2 });
+            }
+            // Diagonal forward right capture
+            if (isValidSquare(row + direction, col + 1) && boardArray[row + direction][col + 1] !== ' ' &&
+                boardArray[row + direction][col + 1] !== piece && isValidSquare(row + 2 * direction, col + 2) &&
+                boardArray[row + 2 * direction][col + 2] === ' ') {
+                validMoves.push({ startRow: row, startCol: col, endRow: row + 2 * direction, endCol: col + 2 });
+            }
+            // King capture moves (backward)
+            if (piece === 'BK') {
+                // Diagonal backward left capture
+                if (isValidSquare(row - direction, col - 1) && boardArray[row - direction][col - 1] !== ' ' &&
+                    boardArray[row - direction][col - 1] !== piece && isValidSquare(row - 2 * direction, col - 2) &&
+                    boardArray[row - 2 * direction][col - 2] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row - 2 * direction, endCol: col - 2 });
+                }
+                // Diagonal backward right capture
+                if (isValidSquare(row - direction, col + 1) && boardArray[row - direction][col + 1] !== ' ' &&
+                    boardArray[row - direction][col + 1] !== piece && isValidSquare(row - 2 * direction, col + 2) &&
+                    boardArray[row - 2 * direction][col + 2] === ' ') {
+                    validMoves.push({ startRow: row, startCol: col, endRow: row - 2 * direction, endCol: col + 2 });
+                }
+            }
+
+            return validMoves;
+        }
+
+        // Function to check if a square is valid (within the board)
+        function isValidSquare(row, col) {
+            return row >= 0 && row < 8 && col >= 0 && col < 8;
+        }
+
+        // Function to check if a move is a capture move
+        function isCaptureMove(startRow, startCol, endRow, endCol) {
+            const rowDiff = Math.abs(endRow - startRow);
+            const colDiff = Math.abs(endCol - startCol);
+            return rowDiff === 2 && colDiff === 2; // Capture move has a diagonal distance of 2
+        }
+
+        // Function to make a move
+        function makeMove(startRow, startCol, endRow, endCol) {
+            // Update the board array
+            boardArray[endRow][endCol] = boardArray[startRow][startCol];
+            boardArray[startRow][startCol] = ' ';
+
+            // Check for king promotion
+            if (endRow === 7 && boardArray[endRow][endCol] === 'R') {
+                boardArray[endRow][endCol] = 'RK'; // King promotion for Red
+            } else if (endRow === 0 && boardArray[endRow][endCol] === 'B') {
+                boardArray[endRow][endCol] = 'BK'; // King promotion for Blue
+            }
+
+            // Check for multiple jumps
+            if (isCaptureMove(startRow, startCol, endRow, endCol)) {
+                const newValidMoves = getValidMoves(endRow, endCol);
+                if (newValidMoves.length > 0) {
+                    // Player must continue capturing
+                    selectedPiece = { row: endRow, col: endCol }; // Keep the piece selected for multiple jumps
+                    switchPlayer(); // Switch turns immediately to handle the next capture
+                    return; // Don't switch back to the other player
+                }
+            }
+
+            // Check for game over conditions
+            checkGameOver();
+        }
+
+        // Function to check for game over conditions
+        function checkGameOver() {
+            // Check if all opponent pieces are captured
+            let redPiecesCount = 0;
+            let bluePiecesCount = 0;
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (boardArray[row][col] === 'R' || boardArray[row][col] === 'RK') {
+                        redPiecesCount++;
+                    } else if (boardArray[row][col] === 'B' || boardArray[row][col] === 'BK') {
+                        bluePiecesCount++;
+                    }
+                }
+            }
+            if (redPiecesCount === 0) {
+                gameOver = true;
+                gameStatus.textContent = 'Game Over: Blue Wins!';
+            } else if (bluePiecesCount === 0) {
+                gameOver = true;
+                gameStatus.textContent = 'Game Over: Red Wins!';
+            }
+
+            // Check if the current player has no valid moves
+            if (currentPlayer === 'B' && getValidMovesForPlayer('B').length === 0) {
+                gameOver = true;
+                gameStatus.textContent = 'Game Over: Red Wins!';
+            } else if (currentPlayer === 'R' && getValidMovesForPlayer('R').length === 0) {
+                gameOver = true;
+                gameStatus.textContent = 'Game Over: Blue Wins!';
+            }
+        }
+
+        // Get valid moves for a specific player
+        function getValidMovesForPlayer(player) {
+            let validMoves = [];
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if (boardArray[row][col] === player || boardArray[row][col] === player + 'K') {
+                        const possibleMoves = getValidMoves(row, col);
+                        validMoves = validMoves.concat(possibleMoves);
+                    }
+                }
+            }
+            return validMoves;
+        }
+
+        // Start the game
+        createBoard();
+        switchPlayer(); // Start with Red's turn
+    </script>
+</body>
+</html>
