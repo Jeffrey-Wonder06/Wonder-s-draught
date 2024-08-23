@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkers Game</title>
     <style>
         .game-container {
@@ -19,7 +21,6 @@
         .square {
             width: 50px;
             height: 50px;
-            border: 1px solid #ccc;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -27,11 +28,11 @@
         }
 
         .square.light {
-            background-color: yellow; 
+            background-color: yellow;
         }
 
         .square.dark {
-            background-color: black; 
+            background-color: black;
             color: white;
         }
 
@@ -39,24 +40,26 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background-color: red; 
-            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        .piece.blue {
-            background-color: blue; 
-            color: white; 
+        .piece.R {
+            background-color: red;
+        }
+
+        .piece.B {
+            background-color: blue;
         }
 
         .piece.king {
-            background-color: gold; 
+            background-color: gold;
         }
 
         .player-info {
             margin-top: 20px;
+            text-align: center;
         }
 
         .player-turn {
@@ -66,7 +69,7 @@
 
         .game-status {
             margin-top: 10px;
-            color: green; /* Initial status */
+            color: green;
         }
     </style>
 </head>
@@ -74,7 +77,7 @@
     <div class="game-container">
         <div class="board"></div>
         <div class="player-info">
-            <div class="player-turn">Player's Turn</div>
+            <div class="player-turn">Red's Turn</div>
             <div class="game-status"></div>
         </div>
     </div>
@@ -84,84 +87,25 @@
         const playerTurn = document.querySelector('.player-turn');
         const gameStatus = document.querySelector('.game-status');
 
-        // Board setup (8x8 grid)
+        // Initial board setup (8x8 grid)
         const boardArray = [
             ['R', ' ', 'R', ' ', 'R', ' ', 'R', ' '],
             [' ', 'R', ' ', 'R', ' ', 'R', ' ', 'R'],
             ['R', ' ', 'R', ' ', 'R', ' ', 'R', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-            ['B', ' ', 'B', ' ', 'B', ' ', 'B', ' '],
             [' ', 'B', ' ', 'B', ' ', 'B', ' ', 'B'],
-            ['B', ' ', 'B', ' ', 'B', ' ', 'B', ' ']
+            ['B', ' ', 'B', ' ', 'B', ' ', 'B', ' '],
+            [' ', 'B', ' ', 'B', ' ', 'B', ' ', 'B']
         ];
 
-        // Player turn
         let currentPlayer = 'R'; // Red starts
-
-        // Game status
         let gameOver = false;
+        let selectedPiece = null;
 
         // Function to create and display the board
         function createBoard() {
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    const square = document.createElement('div');
-                    square.classList.add('square');
-                    square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark'); // Alternating colors
-                    square.dataset.row = row; // Store row and col for reference
-                    square.dataset.col = col;
-
-                    // Add piece to square
-                    if (boardArray[row][col] !== ' ') {
-                        const piece = document.createElement('div');
-                        piece.classList.add('piece');
-                        piece.classList.add(boardArray[row][col]); // 'R' or 'B'
-                        square.appendChild(piece);
-                    }
-                    board.appendChild(square);
-                }
-            }
-        }
-
-// Handle square clicks
-board.addEventListener('click', (event) => {
-  if (gameOver) return;
-  const clickedSquare = event.target;
-  const row = parseInt(clickedSquare.dataset.row);
-  const col = parseInt(clickedSquare.dataset.col);
-  if (currentPlayer === 'R') {
-    // Red's turn
-    if (selectedPiece) {
-      // Piece is selected, check if move is valid
-      const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col);
-      const moveIsValid = validMoves.some(move => move.endRow === row && move.endCol === col);
-      if (moveIsValid) {
-        // Make the move on the board
-        makeMove(selectedPiece.row, selectedPiece.col, row, col); 
-        // **Update the board display after making the move**
-        updateBoard(); 
-        selectedPiece = null; 
-        switchPlayer(); 
-      } else {
-        selectedPiece = null; 
-      }
-    } else {
-      // Select a piece
-      if (boardArray[row][col] === 'R' || boardArray[row][col] === 'RK') {
-        selectedPiece = { row: row, col: col };
-      }
-    }
-  } else {
-    // Blue's turn (handled by the AI)
-  }
-});
-
-        // Update board display based on boardArray
-        function updateBoard() {
-            // Clear the board
-            board.innerHTML = '';
-
+            board.innerHTML = ''; // Clear the board before creating it
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const square = document.createElement('div');
@@ -170,16 +114,10 @@ board.addEventListener('click', (event) => {
                     square.dataset.row = row;
                     square.dataset.col = col;
 
+                    // Add piece to square if present
                     if (boardArray[row][col] !== ' ') {
                         const piece = document.createElement('div');
-                        piece.classList.add('piece');
-                        piece.classList.add(boardArray[row][col]);
-
-                        // King promotion
-                        if (boardArray[row][col] === 'R' && row === 7 || boardArray[row][col] === 'B' && row === 0) {
-                            piece.classList.add('king');
-                        }
-
+                        piece.classList.add('piece', boardArray[row][col]);
                         square.appendChild(piece);
                     }
                     board.appendChild(square);
@@ -187,13 +125,49 @@ board.addEventListener('click', (event) => {
             }
         }
 
+        // Handle square clicks
+        board.addEventListener('click', (event) => {
+            if (gameOver) return;
+            const clickedSquare = event.target.closest('.square');
+            if (!clickedSquare) return;
+
+            const row = parseInt(clickedSquare.dataset.row);
+            const col = parseInt(clickedSquare.dataset.col);
+
+            if (selectedPiece) {
+                const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col);
+                const moveIsValid = validMoves.some(move => move.endRow === row && move.endCol === col);
+                if (moveIsValid) {
+                    makeMove(selectedPiece.row, selectedPiece.col, row, col);
+                    selectedPiece = null;
+                    switchPlayer();
+                } else {
+                    selectedPiece = null;
+                }
+            } else {
+                // Select a piece
+                if (boardArray[row][col] === currentPlayer || boardArray[row][col] === currentPlayer + 'K') {
+                    selectedPiece = { row: row, col: col };
+                }
+            }
+        });
+
+        // Function to update board display
+        function updateBoard() {
+            createBoard();
+        }
+
         // Switch player turn
         function switchPlayer() {
             currentPlayer = currentPlayer === 'R' ? 'B' : 'R';
             playerTurn.textContent = `${currentPlayer === 'R' ? 'Red' : 'Blue'}'s Turn`;
+
+            if (currentPlayer === 'B') {
+                setTimeout(aiMove, 500); // Simple delay for AI move
+            }
         }
 
-        // Simple AI (random move)
+        // Simple AI move (random move for Blue)
         function aiMove() {
             let validMoves = [];
             for (let row = 0; row < 8; row++) {
@@ -224,159 +198,107 @@ board.addEventListener('click', (event) => {
         function getValidMoves(row, col) {
             const piece = boardArray[row][col];
             const validMoves = [];
-            const direction = piece === 'B' || piece === 'BK' ? 1 : -1; // 1 for Blue (downward), -1 for Red (upward)
+            const direction = piece === 'B' || piece === 'BK' ? 1 : -1; // 1 for Blue, -1 for Red
+
+            const addValidMove = (startRow, startCol, endRow, endCol) => {
+                if (isValidSquare(endRow, endCol) && boardArray[endRow][endCol] === ' ') {
+                    validMoves.push({ startRow, startCol, endRow, endCol });
+                }
+            };
 
             // Single piece moves
-            if (piece === 'B') {
-                // Diagonal forward left
-                if (isValidSquare(row + direction, col - 1) && boardArray[row + direction][col - 1] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col - 1 });
-                }
-                // Diagonal forward right
-                if (isValidSquare(row + direction, col + 1) && boardArray[row + direction][col + 1] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col + 1 });
-                }
-            } else {
-                // King moves (both forward and backward)
-                // Diagonal forward left
-                if (isValidSquare(row + direction, col - 1) && boardArray[row + direction][col - 1] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col - 1 });
-                }
-                // Diagonal forward right
-                if (isValidSquare(row + direction, col + 1) && boardArray[row + direction][col + 1] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row + direction, endCol: col + 1 });
-                }
-                // Diagonal backward left
-                if (isValidSquare(row - direction, col - 1) && boardArray[row - direction][col - 1] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row - direction, endCol: col - 1 });
-                }
-                // Diagonal backward right
-                if (isValidSquare(row - direction, col + 1) && boardArray[row - direction][col + 1] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row - direction, endCol: col + 1 });
-                }
+            if (piece === 'B' || piece === 'R') {
+                addValidMove(row, col, row + direction, col - 1); // Diagonal forward left
+                addValidMove(row, col, row + direction, col + 1); // Diagonal forward right
+            }
+
+            // King moves (both forward and backward)
+            if (piece === 'RK' || piece === 'BK') {
+                addValidMove(row, col, row + direction, col - 1); // Diagonal forward left
+                addValidMove(row, col, row + direction, col + 1); // Diagonal forward right
+                addValidMove(row, col, row - direction, col - 1); // Diagonal backward left
+                addValidMove(row, col, row - direction, col + 1); // Diagonal backward right
             }
 
             // Capture moves
-            // Diagonal forward left capture
-            if (isValidSquare(row + direction, col - 1) && boardArray[row + direction][col - 1] !== ' ' &&
-                boardArray[row + direction][col - 1] !== piece && isValidSquare(row + 2 * direction, col - 2) &&
-                boardArray[row + 2 * direction][col - 2] === ' ') {
-                validMoves.push({ startRow: row, startCol: col, endRow: row + 2 * direction, endCol: col - 2 });
-            }
-            // Diagonal forward right capture
-            if (isValidSquare(row + direction, col + 1) && boardArray[row + direction][col + 1] !== ' ' &&
-                boardArray[row + direction][col + 1] !== piece && isValidSquare(row + 2 * direction, col + 2) &&
-                boardArray[row + 2 * direction][col + 2] === ' ') {
-                validMoves.push({ startRow: row, startCol: col, endRow: row + 2 * direction, endCol: col + 2 });
-            }
-            // King capture moves (backward)
-            if (piece === 'BK') {
-                // Diagonal backward left capture
-                if (isValidSquare(row - direction, col - 1) && boardArray[row - direction][col - 1] !== ' ' &&
-                    boardArray[row - direction][col - 1] !== piece && isValidSquare(row - 2 * direction, col - 2) &&
-                    boardArray[row - 2 * direction][col - 2] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row - 2 * direction, endCol: col - 2 });
+            const addCaptureMove = (startRow, startCol, captureRow, captureCol, endRow, endCol) => {
+                if (isValidSquare(captureRow, captureCol) && boardArray[captureRow][captureCol] !== ' ' &&
+                    boardArray[captureRow][captureCol].charAt(0) !== piece.charAt(0) &&
+                    isValidSquare(endRow, endCol) && boardArray[endRow][endCol] === ' ') {
+                    validMoves.push({ startRow, startCol, endRow, endCol });
                 }
-                // Diagonal backward right capture
-                if (isValidSquare(row - direction, col + 1) && boardArray[row - direction][col + 1] !== ' ' &&
-                    boardArray[row - direction][col + 1] !== piece && isValidSquare(row - 2 * direction, col + 2) &&
-                    boardArray[row - 2 * direction][col + 2] === ' ') {
-                    validMoves.push({ startRow: row, startCol: col, endRow: row - 2 * direction, endCol: col + 2 });
-                }
+            };
+
+            addCaptureMove(row, col, row + direction, col - 1, row + 2 * direction, col - 2); // Forward left capture
+            addCaptureMove(row, col, row + direction, col + 1, row + 2 * direction, col + 2); // Forward right capture
+
+            if (piece === 'RK' || piece === 'BK') {
+                addCaptureMove(row, col, row - direction, col - 1, row - 2 * direction, col - 2); // Backward left capture
+                addCaptureMove(row, col, row - direction, col + 1, row - 2 * direction, col + 2); // Backward right capture
             }
 
             return validMoves;
         }
 
-        // Function to check if a square is valid (within the board)
+        // Function to check if the square is within the board
         function isValidSquare(row, col) {
             return row >= 0 && row < 8 && col >= 0 && col < 8;
         }
 
         // Function to check if a move is a capture move
         function isCaptureMove(startRow, startCol, endRow, endCol) {
-            const rowDiff = Math.abs(endRow - startRow);
-            const colDiff = Math.abs(endCol - startCol);
-            return rowDiff === 2 && colDiff === 2; // Capture move has a diagonal distance of 2
+            return Math.abs(startRow - endRow) === 2 && Math.abs(startCol - endCol) === 2;
         }
 
-        // Function to make a move
+        // Function to execute a move
         function makeMove(startRow, startCol, endRow, endCol) {
-            // Update the board array
-            boardArray[endRow][endCol] = boardArray[startRow][startCol];
+            const piece = boardArray[startRow][startCol];
             boardArray[startRow][startCol] = ' ';
+            boardArray[endRow][endCol] = piece;
+
+            // Check for captures
+            if (isCaptureMove(startRow, startCol, endRow, endCol)) {
+                const captureRow = (startRow + endRow) / 2;
+                const captureCol = (startCol + endCol) / 2;
+                boardArray[captureRow][captureCol] = ' ';
+            }
 
             // Check for king promotion
-            if (endRow === 7 && boardArray[endRow][endCol] === 'R') {
-                boardArray[endRow][endCol] = 'RK'; // King promotion for Red
-            } else if (endRow === 0 && boardArray[endRow][endCol] === 'B') {
-                boardArray[endRow][endCol] = 'BK'; // King promotion for Blue
+            if ((endRow === 0 && piece === 'R') || (endRow === 7 && piece === 'B')) {
+                boardArray[endRow][endCol] += 'K'; // Promote to king
             }
 
-            // Check for multiple jumps
-            if (isCaptureMove(startRow, startCol, endRow, endCol)) {
-                const newValidMoves = getValidMoves(endRow, endCol);
-                if (newValidMoves.length > 0) {
-                    // Player must continue capturing
-                    selectedPiece = { row: endRow, col: endCol }; // Keep the piece selected for multiple jumps
-                    switchPlayer(); // Switch turns immediately to handle the next capture
-                    return; // Don't switch back to the other player
-                }
-            }
-
-            // Check for game over conditions
+            updateBoard();
             checkGameOver();
         }
 
-        // Function to check for game over conditions
+        // Function to check if the game is over
         function checkGameOver() {
-            // Check if all opponent pieces are captured
-            let redPiecesCount = 0;
-            let bluePiecesCount = 0;
+            let redPieces = 0;
+            let bluePieces = 0;
+
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     if (boardArray[row][col] === 'R' || boardArray[row][col] === 'RK') {
-                        redPiecesCount++;
-                    } else if (boardArray[row][col] === 'B' || boardArray[row][col] === 'BK') {
-                        bluePiecesCount++;
+                        redPieces++;
+                    }
+                    if (boardArray[row][col] === 'B' || boardArray[row][col] === 'BK') {
+                        bluePieces++;
                     }
                 }
             }
-            if (redPiecesCount === 0) {
+
+            if (redPieces === 0) {
                 gameOver = true;
                 gameStatus.textContent = 'Game Over: Blue Wins!';
-            } else if (bluePiecesCount === 0) {
+            } else if (bluePieces === 0) {
                 gameOver = true;
                 gameStatus.textContent = 'Game Over: Red Wins!';
             }
-
-            // Check if the current player has no valid moves
-            if (currentPlayer === 'B' && getValidMovesForPlayer('B').length === 0) {
-                gameOver = true;
-                gameStatus.textContent = 'Game Over: Red Wins!';
-            } else if (currentPlayer === 'R' && getValidMovesForPlayer('R').length === 0) {
-                gameOver = true;
-                gameStatus.textContent = 'Game Over: Blue Wins!';
-            }
         }
 
-        // Get valid moves for a specific player
-        function getValidMovesForPlayer(player) {
-            let validMoves = [];
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if (boardArray[row][col] === player || boardArray[row][col] === player + 'K') {
-                        const possibleMoves = getValidMoves(row, col);
-                        validMoves = validMoves.concat(possibleMoves);
-                    }
-                }
-            }
-            return validMoves;
-        }
-
-        // Start the game
         createBoard();
-        switchPlayer(); // Start with Red's turn
     </script>
 </body>
 </html>
+
