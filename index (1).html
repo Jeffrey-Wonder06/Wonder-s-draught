@@ -87,7 +87,6 @@
         const playerTurn = document.querySelector('.player-turn');
         const gameStatus = document.querySelector('.game-status');
 
-        // Initial board setup (8x8 grid)
         const boardArray = [
             ['R', ' ', 'R', ' ', 'R', ' ', 'R', ' '],
             [' ', 'R', ' ', 'R', ' ', 'R', ' ', 'R'],
@@ -100,12 +99,12 @@
         ];
 
         let currentPlayer = 'R'; // Red starts
-        let gameOver = false;
         let selectedPiece = null;
 
-        // Function to create and display the board
+        // Create the game board
         function createBoard() {
             board.innerHTML = ''; // Clear the board before creating it
+
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const square = document.createElement('div');
@@ -115,11 +114,13 @@
                     square.dataset.col = col;
 
                     // Add piece to square if present
-                    if (boardArray[row][col] !== ' ') {
+                    const pieceType = boardArray[row][col];
+                    if (pieceType !== ' ') {
                         const piece = document.createElement('div');
-                        piece.classList.add('piece', boardArray[row][col]);
+                        piece.classList.add('piece', pieceType);
                         square.appendChild(piece);
                     }
+
                     board.appendChild(square);
                 }
             }
@@ -127,7 +128,6 @@
 
         // Handle square clicks
         board.addEventListener('click', (event) => {
-            if (gameOver) return;
             const clickedSquare = event.target.closest('.square');
             if (!clickedSquare) return;
 
@@ -135,24 +135,28 @@
             const col = parseInt(clickedSquare.dataset.col);
 
             if (selectedPiece) {
+                // Check if the move is valid
                 const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col);
                 const moveIsValid = validMoves.some(move => move.endRow === row && move.endCol === col);
+                
                 if (moveIsValid) {
                     makeMove(selectedPiece.row, selectedPiece.col, row, col);
                     selectedPiece = null;
                     switchPlayer();
                 } else {
-                    selectedPiece = null;
+                    selectedPiece = null; // Deselect the piece
                 }
             } else {
-                // Select a piece
+                // Select a piece if it belongs to the current player
                 if (boardArray[row][col] === currentPlayer || boardArray[row][col] === currentPlayer + 'K') {
                     selectedPiece = { row: row, col: col };
                 }
             }
+
+            updateBoard();
         });
 
-        // Function to update board display
+        // Function to update the board display
         function updateBoard() {
             createBoard();
         }
@@ -161,37 +165,6 @@
         function switchPlayer() {
             currentPlayer = currentPlayer === 'R' ? 'B' : 'R';
             playerTurn.textContent = `${currentPlayer === 'R' ? 'Red' : 'Blue'}'s Turn`;
-
-            if (currentPlayer === 'B') {
-                setTimeout(aiMove, 500); // Simple delay for AI move
-            }
-        }
-
-        // Simple AI move (random move for Blue)
-        function aiMove() {
-            let validMoves = [];
-            for (let row = 0; row < 8; row++) {
-                for (let col = 0; col < 8; col++) {
-                    if (boardArray[row][col] === 'B' || boardArray[row][col] === 'BK') {
-                        const possibleMoves = getValidMoves(row, col);
-                        validMoves = validMoves.concat(possibleMoves);
-                    }
-                }
-            }
-
-            // Prioritize capture moves
-            const captureMoves = validMoves.filter(move => isCaptureMove(move.startRow, move.startCol, move.endRow, move.endCol));
-            if (captureMoves.length > 0) {
-                validMoves = captureMoves;
-            }
-
-            if (validMoves.length > 0) {
-                const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-                makeMove(randomMove.startRow, randomMove.startCol, randomMove.endRow, randomMove.endCol);
-            } else {
-                gameOver = true;
-                gameStatus.textContent = 'Game Over: Red Wins!';
-            }
         }
 
         // Function to get valid moves for a piece
@@ -245,11 +218,6 @@
             return row >= 0 && row < 8 && col >= 0 && col < 8;
         }
 
-        // Function to check if a move is a capture move
-        function isCaptureMove(startRow, startCol, endRow, endCol) {
-            return Math.abs(startRow - endRow) === 2 && Math.abs(startCol - endCol) === 2;
-        }
-
         // Function to execute a move
         function makeMove(startRow, startCol, endRow, endCol) {
             const piece = boardArray[startRow][startCol];
@@ -289,16 +257,20 @@
             }
 
             if (redPieces === 0) {
-                gameOver = true;
                 gameStatus.textContent = 'Game Over: Blue Wins!';
             } else if (bluePieces === 0) {
-                gameOver = true;
                 gameStatus.textContent = 'Game Over: Red Wins!';
             }
+        }
+
+        // Function to check if a move is a capture move
+        function isCaptureMove(startRow, startCol, endRow, endCol) {
+            return Math.abs(startRow - endRow) === 2 && Math.abs(startCol - endCol) === 2;
         }
 
         createBoard();
     </script>
 </body>
 </html>
+
 
