@@ -124,7 +124,7 @@
             }
         }
 
-        // Handle square clicks
+// Handle square clicks
 board.addEventListener('click', (event) => {
   if (gameOver) return;
   const clickedSquare = event.target;
@@ -137,12 +137,14 @@ board.addEventListener('click', (event) => {
       const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col);
       const moveIsValid = validMoves.some(move => move.endRow === row && move.endCol === col);
       if (moveIsValid) {
-        // **Make the move on the board**
+        // Make the move on the board
         makeMove(selectedPiece.row, selectedPiece.col, row, col); 
-        selectedPiece = null; // Deselect the piece
-        switchPlayer(); // Switch to the next player
+        // **Update the board display after making the move**
+        updateBoard(); 
+        selectedPiece = null; 
+        switchPlayer(); 
       } else {
-        selectedPiece = null; // Deselect the piece if the move is invalid
+        selectedPiece = null; 
       }
     } else {
       // Select a piece
