@@ -125,37 +125,35 @@
         }
 
         // Handle square clicks
-        board.addEventListener('click', (event) => {
-            if (gameOver) return;
-
-            const clickedSquare = event.target;
-            const row = parseInt(clickedSquare.dataset.row);
-            const col = parseInt(clickedSquare.dataset.col);
-
-            if (currentPlayer === 'R') {
-                // Red's turn
-                if (selectedPiece) {
-                    // Piece is selected, check if move is valid
-                    const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col);
-                    const moveIsValid = validMoves.some(move => move.endRow === row && move.endCol === col);
-
-                    if (moveIsValid) {
-                        makeMove(selectedPiece.row, selectedPiece.col, row, col);
-                        selectedPiece = null;
-                        switchPlayer();
-                    } else {
-                        selectedPiece = null; // Reset selection if invalid
-                    }
-                } else {
-                    // Select a piece
-                    if (boardArray[row][col] === 'R' || boardArray[row][col] === 'RK') {
-                        selectedPiece = { row: row, col: col };
-                    }
-                }
-            } else {
-                // Blue's turn (handled by the AI)
-            }
-        });
+board.addEventListener('click', (event) => {
+  if (gameOver) return;
+  const clickedSquare = event.target;
+  const row = parseInt(clickedSquare.dataset.row);
+  const col = parseInt(clickedSquare.dataset.col);
+  if (currentPlayer === 'R') {
+    // Red's turn
+    if (selectedPiece) {
+      // Piece is selected, check if move is valid
+      const validMoves = getValidMoves(selectedPiece.row, selectedPiece.col);
+      const moveIsValid = validMoves.some(move => move.endRow === row && move.endCol === col);
+      if (moveIsValid) {
+        // **Make the move on the board**
+        makeMove(selectedPiece.row, selectedPiece.col, row, col); 
+        selectedPiece = null; // Deselect the piece
+        switchPlayer(); // Switch to the next player
+      } else {
+        selectedPiece = null; // Deselect the piece if the move is invalid
+      }
+    } else {
+      // Select a piece
+      if (boardArray[row][col] === 'R' || boardArray[row][col] === 'RK') {
+        selectedPiece = { row: row, col: col };
+      }
+    }
+  } else {
+    // Blue's turn (handled by the AI)
+  }
+});
 
         // Update board display based on boardArray
         function updateBoard() {
